@@ -17,10 +17,12 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-    - name: Check out code
-      uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4.1.7
       with:
-        ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref }}
+        fetch-depth: 0  # Fetch all history for all branches and tags
+        clean: true  # Clean the working tree before checkout
+        show-progress: true  # Show download progress
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
