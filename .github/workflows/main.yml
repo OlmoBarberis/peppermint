@@ -2,11 +2,6 @@ name: Build & Push Docker Image
 
 on:
   workflow_dispatch:
-    inputs:
-      ref:
-        description: 'Branch or tag to build from'
-        required: true
-        default: 'main'
   push:
     branches:
       - 'main'
@@ -32,8 +27,8 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
+            type=ref,event=workflow_dispatch
             type=semver,pattern={{version}}
-
       -
         name: Login to DockerHub
         if: github.event_name != 'pull_request'
