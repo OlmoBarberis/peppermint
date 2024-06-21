@@ -8,8 +8,8 @@ on:
       - '*'
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to build from'
+      ref:
+        description: 'Branch or tag to build from'
         required: true
         default: 'main'
 
@@ -17,12 +17,13 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4.1.7
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history for all branches and tags
-        clean: true  # Clean the working tree before checkout
-        show-progress: true  # Show download progress
+        fetch-depth: 0
+        clean: true
+        show-progress: true
+        ref: ${{ github.event.inputs.ref || github.ref }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -33,9 +34,9 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Get current date
-      id: date
-      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+    - name: Extract branch or tag name
+      shell: bash
+      run: echo "REF_NAME=$(echo ${GITHUB_REF#refs/*/})" >> $GITHUB_ENV
 
     - name: Generate Docker metadata
       id: meta
@@ -43,9 +44,9 @@ jobs:
       with:
         images: olmobarberis/peppermint
         tags: |
-          type=ref,event=tag
           type=raw,value=nightly,enable=${{ github.ref == 'refs/heads/main' }}
-          type=raw,value={{branch}}-{{sha}}-${{ steps.date.outputs.date }},enable=${{ github.ref != 'refs/heads/main' && github.ref_type != 'tag' }}
+          type=raw,value=${{ env.REF_NAME }},enable=${{ github.ref != 'refs/heads/main' }}
+          type=sha,prefix=${{ env.REF_NAME }}-
 
     - name: Build and push
       uses: docker/build-push-action@v6
